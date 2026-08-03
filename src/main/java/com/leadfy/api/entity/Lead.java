@@ -111,6 +111,10 @@ public class Lead {
 	}
 
 	public void updateStatus(LeadStatus status) {
+		if (this.status == status) {
+			return;
+		}
+
 		this.status = status;
 		this.closedAt = status == LeadStatus.CLOSED ? LocalDateTime.now() : null;
 	}

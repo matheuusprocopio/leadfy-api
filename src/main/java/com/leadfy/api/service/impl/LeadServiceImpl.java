@@ -10,6 +10,7 @@ import com.leadfy.api.exception.ResourceNotFoundException;
 import com.leadfy.api.repository.LeadRepository;
 import com.leadfy.api.repository.UserRepository;
 import com.leadfy.api.service.LeadService;
+import com.leadfy.api.service.LeadStatusTransitionValidator;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
@@ -20,10 +21,16 @@ public class LeadServiceImpl implements LeadService {
 
 	private final LeadRepository leadRepository;
 	private final UserRepository userRepository;
+	private final LeadStatusTransitionValidator leadStatusTransitionValidator;
 
-	public LeadServiceImpl(LeadRepository leadRepository, UserRepository userRepository) {
+	public LeadServiceImpl(
+			LeadRepository leadRepository,
+			UserRepository userRepository,
+			LeadStatusTransitionValidator leadStatusTransitionValidator
+	) {
 		this.leadRepository = leadRepository;
 		this.userRepository = userRepository;
+		this.leadStatusTransitionValidator = leadStatusTransitionValidator;
 	}
 
 	@Override
@@ -81,6 +88,7 @@ public class LeadServiceImpl implements LeadService {
 	@Transactional
 	public LeadResponse updateStatus(Long ownerId, Long leadId, UpdateLeadStatusRequest request) {
 		Lead lead = findLeadByIdAndOwnerId(leadId, ownerId);
+		leadStatusTransitionValidator.validate(lead.getStatus(), request.status());
 		lead.updateStatus(request.status());
 		return toResponse(lead);
 	}

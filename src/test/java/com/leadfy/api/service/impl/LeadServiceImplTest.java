@@ -3,6 +3,7 @@ package com.leadfy.api.service.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,9 +15,11 @@ import com.leadfy.api.entity.Lead;
 import com.leadfy.api.entity.User;
 import com.leadfy.api.enums.LeadSource;
 import com.leadfy.api.enums.LeadStatus;
+import com.leadfy.api.exception.InvalidLeadStatusTransitionException;
 import com.leadfy.api.exception.ResourceNotFoundException;
 import com.leadfy.api.repository.LeadRepository;
 import com.leadfy.api.repository.UserRepository;
+import com.leadfy.api.service.LeadStatusTransitionValidator;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +41,9 @@ class LeadServiceImplTest {
 
 	@Mock
 	private UserRepository userRepository;
+
+	@Mock
+	private LeadStatusTransitionValidator leadStatusTransitionValidator;
 
 	@InjectMocks
 	private LeadServiceImpl leadService;
@@ -126,8 +132,8 @@ class LeadServiceImplTest {
 	}
 
 	@Test
-	void updateStatusShouldChangeLeadStatus() {
-		Lead lead = leadWithId(10L, userWithId(OWNER_ID));
+	void updateStatusShouldValidateAndChangeLeadStatus() {
+		Lead lead = leadWithIdAndStatus(10L, userWithId(OWNER_ID), LeadStatus.NEGOTIATION);
 		UpdateLeadStatusRequest request = new UpdateLeadStatusRequest(LeadStatus.CLOSED);
 
 		when(leadRepository.findByIdAndOwnerId(10L, OWNER_ID)).thenReturn(Optional.of(lead));
@@ -136,6 +142,25 @@ class LeadServiceImplTest {
 
 		assertThat(response.status()).isEqualTo(LeadStatus.CLOSED);
 		assertThat(response.closedAt()).isNotNull();
+		verify(leadStatusTransitionValidator).validate(LeadStatus.NEGOTIATION, LeadStatus.CLOSED);
+	}
+
+	@Test
+	void updateStatusShouldNotChangeLeadWhenTransitionIsInvalid() {
+		Lead lead = leadWithId(10L, userWithId(OWNER_ID));
+		UpdateLeadStatusRequest request = new UpdateLeadStatusRequest(LeadStatus.CLOSED);
+
+		when(leadRepository.findByIdAndOwnerId(10L, OWNER_ID)).thenReturn(Optional.of(lead));
+		doThrow(new InvalidLeadStatusTransitionException(LeadStatus.NEW, LeadStatus.CLOSED))
+				.when(leadStatusTransitionValidator)
+				.validate(LeadStatus.NEW, LeadStatus.CLOSED);
+
+		assertThatThrownBy(() -> leadService.updateStatus(OWNER_ID, 10L, request))
+				.isInstanceOf(InvalidLeadStatusTransitionException.class)
+				.hasMessage("Invalid lead status transition from NEW to CLOSED");
+
+		assertThat(lead.getStatus()).isEqualTo(LeadStatus.NEW);
+		assertThat(lead.getClosedAt()).isNull();
 	}
 
 	@Test
@@ -156,6 +181,10 @@ class LeadServiceImplTest {
 	}
 
 	private Lead leadWithId(Long id, User owner) {
+		return leadWithIdAndStatus(id, owner, LeadStatus.NEW);
+	}
+
+	private Lead leadWithIdAndStatus(Long id, User owner, LeadStatus status) {
 		Lead lead = new Lead(
 				"Acme Contact",
 				"Acme Inc",
@@ -167,6 +196,7 @@ class LeadServiceImplTest {
 		);
 
 		setLeadPersistenceFields(lead, id);
+		lead.updateStatus(status);
 		return lead;
 	}
 
