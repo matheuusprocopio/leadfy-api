@@ -17,3 +17,9 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:leadfy-development-secret-change-me}
+    issuer: ${JWT_ISSUER:leadfy-api}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
