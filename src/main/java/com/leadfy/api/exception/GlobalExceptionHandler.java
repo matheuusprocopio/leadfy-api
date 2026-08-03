@@ -4,6 +4,7 @@ import com.leadfy.api.dto.response.ErrorResponse;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,6 +27,13 @@ public class GlobalExceptionHandler {
 				.body(ErrorResponse.of("INVALID_CREDENTIALS", exception.getMessage()));
 	}
 
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException exception) {
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
+				.body(ErrorResponse.of("RESOURCE_NOT_FOUND", exception.getMessage()));
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
 		String message = exception.getBindingResult()
@@ -37,6 +45,13 @@ public class GlobalExceptionHandler {
 		return ResponseEntity
 				.badRequest()
 				.body(ErrorResponse.of("VALIDATION_ERROR", message));
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleUnreadableMessage(HttpMessageNotReadableException exception) {
+		return ResponseEntity
+				.badRequest()
+				.body(ErrorResponse.of("MALFORMED_REQUEST", "Request body is invalid or has unsupported values"));
 	}
 
 	private String formatFieldError(FieldError fieldError) {
