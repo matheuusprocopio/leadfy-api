@@ -43,6 +43,15 @@ public class GlobalExceptionHandler {
 				.body(ErrorResponse.of("INVALID_LEAD_STATUS_TRANSITION", exception.getMessage()));
 	}
 
+	@ExceptionHandler(InvalidProposalStatusTransitionException.class)
+	public ResponseEntity<ErrorResponse> handleInvalidProposalStatusTransition(
+			InvalidProposalStatusTransitionException exception
+	) {
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(ErrorResponse.of("INVALID_PROPOSAL_STATUS_TRANSITION", exception.getMessage()));
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
 		String message = exception.getBindingResult()
