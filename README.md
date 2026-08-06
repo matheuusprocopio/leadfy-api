@@ -4,6 +4,11 @@
 
 API REST de um mini-CRM de prospecção para freelancers, desenvolvida com Java e Spring Boot.
 
+> **Deploy:** [leadfy-api.onrender.com](https://leadfy-api.onrender.com) — Swagger em
+> [/swagger-ui/index.html](https://leadfy-api.onrender.com/swagger-ui/index.html).
+> Hospedado no plano gratuito do Render: a primeira requisição pode levar alguns
+> segundos caso o serviço esteja em repouso.
+
 A aplicação permite que um freelancer cadastre leads (clientes em potencial), acompanhe
 cada um por um funil de vendas com transições de status controladas, registre interações
 (ligações, e-mails, reuniões) e propostas comerciais, e consulte métricas agregadas de
@@ -43,6 +48,17 @@ compartilhamento entre contas.
 - JUnit 5, Mockito, AssertJ
 - Testcontainers
 - Docker / Docker Compose
+- Render (deploy)
+
+## Deploy
+
+A API está hospedada no Render, com deploy automático via Docker a partir da branch
+`main`. A documentação interativa pode ser acessada em:
+
+https://leadfy-api.onrender.com/swagger-ui/index.html
+
+> O serviço utiliza o plano gratuito do Render. Se o serviço estiver em repouso, a
+> primeira requisição pode levar alguns segundos até o container voltar a responder.
 
 ## Arquitetura
 
