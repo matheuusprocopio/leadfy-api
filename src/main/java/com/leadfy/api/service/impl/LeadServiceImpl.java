@@ -63,6 +63,15 @@ public class LeadServiceImpl implements LeadService {
 
 	@Override
 	@Transactional(readOnly = true)
+	public List<LeadResponse> findStale(Long ownerId) {
+		return leadRepository.findByOwnerIdAndStaleLeadTrueOrderByCreatedAtDesc(ownerId)
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public LeadResponse findById(Long ownerId, Long leadId) {
 		return toResponse(findLeadByIdAndOwnerId(leadId, ownerId));
 	}
@@ -117,7 +126,8 @@ public class LeadServiceImpl implements LeadService {
 				lead.getNotes(),
 				lead.getCreatedAt(),
 				lead.getUpdatedAt(),
-				lead.getClosedAt()
+				lead.getClosedAt(),
+				lead.isStaleLead()
 		);
 	}
 

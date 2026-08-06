@@ -56,6 +56,9 @@ public class Lead {
 
 	private LocalDateTime closedAt;
 
+	@Column(name = "stale_lead", nullable = false)
+	private boolean staleLead;
+
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "owner_id", nullable = false)
 	private User owner;
@@ -117,6 +120,18 @@ public class Lead {
 
 		this.status = status;
 		this.closedAt = status == LeadStatus.CLOSED ? LocalDateTime.now() : null;
+
+		if (status == LeadStatus.CLOSED || status == LeadStatus.LOST) {
+			this.staleLead = false;
+		}
+	}
+
+	public void markAsStale() {
+		this.staleLead = true;
+	}
+
+	public void clearStaleFlag() {
+		this.staleLead = false;
 	}
 
 	public Long getId() {
@@ -161,6 +176,10 @@ public class Lead {
 
 	public LocalDateTime getClosedAt() {
 		return closedAt;
+	}
+
+	public boolean isStaleLead() {
+		return staleLead;
 	}
 
 	public User getOwner() {

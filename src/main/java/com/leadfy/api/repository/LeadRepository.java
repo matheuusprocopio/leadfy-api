@@ -5,6 +5,8 @@ import com.leadfy.api.enums.LeadStatus;
 import com.leadfy.api.repository.projection.LeadSourceConversionProjection;
 import com.leadfy.api.repository.projection.LeadStatusCountProjection;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +18,8 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
 	List<Lead> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
 
 	Optional<Lead> findByIdAndOwnerId(Long id, Long ownerId);
+
+	List<Lead> findByOwnerIdAndStaleLeadTrueOrderByCreatedAtDesc(Long ownerId);
 
 	Long countByOwnerId(Long ownerId);
 
@@ -50,4 +54,18 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
 			  AND closed_at IS NOT NULL
 			""", nativeQuery = true)
 	BigDecimal averageDaysToCloseByOwnerId(@Param("ownerId") Long ownerId);
+
+	@Query("""
+			SELECT lead FROM Lead lead
+			WHERE lead.staleLead = false
+			  AND lead.status NOT IN :excludedStatuses
+			  AND COALESCE(
+			        (SELECT MAX(interaction.interactionDate) FROM Interaction interaction WHERE interaction.lead = lead),
+			        lead.createdAt
+			      ) <= :cutoff
+			""")
+	List<Lead> findLeadsEligibleForStaleFlag(
+			@Param("cutoff") LocalDateTime cutoff,
+			@Param("excludedStatuses") Collection<LeadStatus> excludedStatuses
+	);
 }

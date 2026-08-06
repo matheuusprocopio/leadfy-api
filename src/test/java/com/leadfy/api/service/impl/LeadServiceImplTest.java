@@ -99,6 +99,20 @@ class LeadServiceImplTest {
 	}
 
 	@Test
+	void findStaleShouldReturnOnlyLeadsFlaggedAsStale() {
+		Lead staleLead = leadWithId(10L, userWithId(OWNER_ID));
+		staleLead.markAsStale();
+
+		when(leadRepository.findByOwnerIdAndStaleLeadTrueOrderByCreatedAtDesc(OWNER_ID))
+				.thenReturn(List.of(staleLead));
+
+		List<LeadResponse> responses = leadService.findStale(OWNER_ID);
+
+		assertThat(responses).hasSize(1);
+		assertThat(responses.get(0).staleLead()).isTrue();
+	}
+
+	@Test
 	void findByIdShouldRejectLeadFromAnotherOwner() {
 		when(leadRepository.findByIdAndOwnerId(10L, OWNER_ID)).thenReturn(Optional.empty());
 
@@ -143,6 +157,19 @@ class LeadServiceImplTest {
 		assertThat(response.status()).isEqualTo(LeadStatus.CLOSED);
 		assertThat(response.closedAt()).isNotNull();
 		verify(leadStatusTransitionValidator).validate(LeadStatus.NEGOTIATION, LeadStatus.CLOSED);
+	}
+
+	@Test
+	void updateStatusShouldClearStaleFlagWhenLeadIsClosedOrLost() {
+		Lead lead = leadWithIdAndStatus(10L, userWithId(OWNER_ID), LeadStatus.NEGOTIATION);
+		lead.markAsStale();
+		UpdateLeadStatusRequest request = new UpdateLeadStatusRequest(LeadStatus.CLOSED);
+
+		when(leadRepository.findByIdAndOwnerId(10L, OWNER_ID)).thenReturn(Optional.of(lead));
+
+		LeadResponse response = leadService.updateStatus(OWNER_ID, 10L, request);
+
+		assertThat(response.staleLead()).isFalse();
 	}
 
 	@Test

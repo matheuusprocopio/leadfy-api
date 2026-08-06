@@ -15,6 +15,7 @@ public record LeadResponse(
 		String notes,
 		LocalDateTime createdAt,
 		LocalDateTime updatedAt,
-		LocalDateTime closedAt
+		LocalDateTime closedAt,
+		boolean staleLead
 ) {
 }

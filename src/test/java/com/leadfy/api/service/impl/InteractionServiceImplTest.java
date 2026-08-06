@@ -45,6 +45,28 @@ class InteractionServiceImplTest {
 	private InteractionServiceImpl interactionService;
 
 	@Test
+	void createShouldClearStaleFlagFromLead() {
+		Lead lead = leadWithId(LEAD_ID, userWithId(OWNER_ID));
+		lead.markAsStale();
+		CreateInteractionRequest request = new CreateInteractionRequest(
+				InteractionType.CALL,
+				"Followed up",
+				LocalDateTime.now().minusHours(1)
+		);
+
+		when(leadRepository.findByIdAndOwnerId(LEAD_ID, OWNER_ID)).thenReturn(Optional.of(lead));
+		when(interactionRepository.save(any(Interaction.class))).thenAnswer(invocation -> {
+			Interaction interaction = invocation.getArgument(0);
+			setInteractionPersistenceFields(interaction, 100L);
+			return interaction;
+		});
+
+		interactionService.create(OWNER_ID, LEAD_ID, request);
+
+		assertThat(lead.isStaleLead()).isFalse();
+	}
+
+	@Test
 	void createShouldSaveInteractionForOwnedLead() {
 		Lead lead = leadWithId(LEAD_ID, userWithId(OWNER_ID));
 		LocalDateTime interactionDate = LocalDateTime.now().minusDays(1);

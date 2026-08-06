@@ -28,6 +28,7 @@ public class InteractionServiceImpl implements InteractionService {
 	@Transactional
 	public InteractionResponse create(Long ownerId, Long leadId, CreateInteractionRequest request) {
 		Lead lead = findLeadByIdAndOwnerId(leadId, ownerId);
+		lead.clearStaleFlag();
 
 		Interaction interaction = new Interaction(
 				request.type(),

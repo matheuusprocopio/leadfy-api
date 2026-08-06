@@ -12,6 +12,8 @@ public interface LeadService {
 
 	List<LeadResponse> findAll(Long ownerId);
 
+	List<LeadResponse> findStale(Long ownerId);
+
 	LeadResponse findById(Long ownerId, Long leadId);
 
 	LeadResponse update(Long ownerId, Long leadId, UpdateLeadRequest request);

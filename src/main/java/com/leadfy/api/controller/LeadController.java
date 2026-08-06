@@ -55,6 +55,14 @@ public class LeadController {
 		return ResponseEntity.ok(leadService.findAll(authenticatedUser.getId()));
 	}
 
+	@GetMapping("/stale")
+	@Operation(summary = "List authenticated user's leads flagged as stale")
+	public ResponseEntity<List<LeadResponse>> findStale(
+			@AuthenticationPrincipal AuthenticatedUser authenticatedUser
+	) {
+		return ResponseEntity.ok(leadService.findStale(authenticatedUser.getId()));
+	}
+
 	@GetMapping("/{leadId}")
 	@Operation(summary = "Find a lead by id")
 	public ResponseEntity<LeadResponse> findById(

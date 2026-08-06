@@ -23,3 +23,8 @@ security:
     secret: ${JWT_SECRET:leadfy-development-secret-change-me}
     issuer: ${JWT_ISSUER:leadfy-api}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+
+leadfy:
+  stale-lead:
+    threshold-days: ${STALE_LEAD_THRESHOLD_DAYS:7}
+    cron: ${STALE_LEAD_CRON:0 0 2 * * *}
