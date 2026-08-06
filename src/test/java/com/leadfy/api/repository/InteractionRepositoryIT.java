@@ -10,12 +10,15 @@ import com.leadfy.api.entity.User;
 import com.leadfy.api.enums.InteractionType;
 import com.leadfy.api.enums.LeadSource;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -37,13 +40,13 @@ class InteractionRepositoryIT extends AbstractIntegrationTest {
 		Lead leadA = persistLead(ownerA, "Lead A");
 		persistInteraction(leadA, InteractionType.CALL, LocalDateTime.now().minusDays(1));
 
-		List<Interaction> asOwnerA = interactionRepository
-				.findByLeadIdAndLeadOwnerIdOrderByInteractionDateDescCreatedAtDesc(leadA.getId(), ownerA.getId());
-		List<Interaction> asOwnerB = interactionRepository
-				.findByLeadIdAndLeadOwnerIdOrderByInteractionDateDescCreatedAtDesc(leadA.getId(), ownerB.getId());
+		Page<Interaction> asOwnerA = interactionRepository
+				.findByLeadIdAndLeadOwnerId(leadA.getId(), ownerA.getId(), PageRequest.of(0, 20));
+		Page<Interaction> asOwnerB = interactionRepository
+				.findByLeadIdAndLeadOwnerId(leadA.getId(), ownerB.getId(), PageRequest.of(0, 20));
 
-		assertThat(asOwnerA).hasSize(1);
-		assertThat(asOwnerB).isEmpty();
+		assertThat(asOwnerA.getContent()).hasSize(1);
+		assertThat(asOwnerB.getContent()).isEmpty();
 	}
 
 	@Test
@@ -53,11 +56,12 @@ class InteractionRepositoryIT extends AbstractIntegrationTest {
 		persistInteraction(lead, InteractionType.EMAIL, LocalDateTime.now().minusDays(5));
 		Interaction mostRecent = persistInteraction(lead, InteractionType.CALL, LocalDateTime.now().minusDays(1));
 
-		List<Interaction> interactions = interactionRepository
-				.findByLeadIdAndLeadOwnerIdOrderByInteractionDateDescCreatedAtDesc(lead.getId(), owner.getId());
+		Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "interactionDate"));
+		Page<Interaction> interactions = interactionRepository
+				.findByLeadIdAndLeadOwnerId(lead.getId(), owner.getId(), pageable);
 
-		assertThat(interactions).hasSize(2);
-		assertThat(interactions.get(0).getId()).isEqualTo(mostRecent.getId());
+		assertThat(interactions.getContent()).hasSize(2);
+		assertThat(interactions.getContent().get(0).getId()).isEqualTo(mostRecent.getId());
 	}
 
 	@Test

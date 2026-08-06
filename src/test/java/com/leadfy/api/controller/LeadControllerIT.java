@@ -58,8 +58,9 @@ class LeadControllerIT extends AbstractIntegrationTest {
 
 		mockMvc.perform(get("/api/leads").header("Authorization", "Bearer " + ownerAToken))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(1))
-				.andExpect(jsonPath("$[0].name").value("Owner A Lead"));
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].name").value("Owner A Lead"))
+				.andExpect(jsonPath("$.totalElements").value(1));
 	}
 
 	@Test

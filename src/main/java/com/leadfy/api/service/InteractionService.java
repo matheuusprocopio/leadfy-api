@@ -3,13 +3,14 @@ package com.leadfy.api.service;
 import com.leadfy.api.dto.request.CreateInteractionRequest;
 import com.leadfy.api.dto.request.UpdateInteractionRequest;
 import com.leadfy.api.dto.response.InteractionResponse;
-import java.util.List;
+import com.leadfy.api.dto.response.PageResponse;
+import org.springframework.data.domain.Pageable;
 
 public interface InteractionService {
 
 	InteractionResponse create(Long ownerId, Long leadId, CreateInteractionRequest request);
 
-	List<InteractionResponse> findAll(Long ownerId, Long leadId);
+	PageResponse<InteractionResponse> findAll(Long ownerId, Long leadId, Pageable pageable);
 
 	InteractionResponse findById(Long ownerId, Long leadId, Long interactionId);
 

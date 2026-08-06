@@ -3,13 +3,14 @@ package com.leadfy.api.service.impl;
 import com.leadfy.api.dto.request.CreateInteractionRequest;
 import com.leadfy.api.dto.request.UpdateInteractionRequest;
 import com.leadfy.api.dto.response.InteractionResponse;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.entity.Interaction;
 import com.leadfy.api.entity.Lead;
 import com.leadfy.api.exception.ResourceNotFoundException;
 import com.leadfy.api.repository.InteractionRepository;
 import com.leadfy.api.repository.LeadRepository;
 import com.leadfy.api.service.InteractionService;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,13 +43,12 @@ public class InteractionServiceImpl implements InteractionService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<InteractionResponse> findAll(Long ownerId, Long leadId) {
+	public PageResponse<InteractionResponse> findAll(Long ownerId, Long leadId, Pageable pageable) {
 		findLeadByIdAndOwnerId(leadId, ownerId);
 
-		return interactionRepository.findByLeadIdAndLeadOwnerIdOrderByInteractionDateDescCreatedAtDesc(leadId, ownerId)
-				.stream()
-				.map(this::toResponse)
-				.toList();
+		return PageResponse.from(
+				interactionRepository.findByLeadIdAndLeadOwnerId(leadId, ownerId, pageable).map(this::toResponse)
+		);
 	}
 
 	@Override

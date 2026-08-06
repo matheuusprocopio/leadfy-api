@@ -4,6 +4,7 @@ import com.leadfy.api.dto.request.CreateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadStatusRequest;
 import com.leadfy.api.dto.response.LeadResponse;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.security.AuthenticatedUser;
 import com.leadfy.api.service.LeadService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -49,10 +53,11 @@ public class LeadController {
 
 	@GetMapping
 	@Operation(summary = "List authenticated user's leads")
-	public ResponseEntity<List<LeadResponse>> findAll(
-			@AuthenticationPrincipal AuthenticatedUser authenticatedUser
+	public ResponseEntity<PageResponse<LeadResponse>> findAll(
+			@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+			@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
 	) {
-		return ResponseEntity.ok(leadService.findAll(authenticatedUser.getId()));
+		return ResponseEntity.ok(leadService.findAll(authenticatedUser.getId(), pageable));
 	}
 
 	@GetMapping("/stale")

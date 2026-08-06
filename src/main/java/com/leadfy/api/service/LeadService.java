@@ -4,13 +4,15 @@ import com.leadfy.api.dto.request.CreateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadStatusRequest;
 import com.leadfy.api.dto.response.LeadResponse;
+import com.leadfy.api.dto.response.PageResponse;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface LeadService {
 
 	LeadResponse create(Long ownerId, CreateLeadRequest request);
 
-	List<LeadResponse> findAll(Long ownerId);
+	PageResponse<LeadResponse> findAll(Long ownerId, Pageable pageable);
 
 	List<LeadResponse> findStale(Long ownerId);
 

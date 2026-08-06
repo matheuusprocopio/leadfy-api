@@ -3,6 +3,7 @@ package com.leadfy.api.service.impl;
 import com.leadfy.api.dto.request.CreateProposalRequest;
 import com.leadfy.api.dto.request.UpdateProposalRequest;
 import com.leadfy.api.dto.request.UpdateProposalStatusRequest;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.dto.response.ProposalResponse;
 import com.leadfy.api.entity.Lead;
 import com.leadfy.api.entity.Proposal;
@@ -11,7 +12,7 @@ import com.leadfy.api.repository.LeadRepository;
 import com.leadfy.api.repository.ProposalRepository;
 import com.leadfy.api.service.ProposalService;
 import com.leadfy.api.service.ProposalStatusTransitionValidator;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,13 +49,12 @@ public class ProposalServiceImpl implements ProposalService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<ProposalResponse> findAll(Long ownerId, Long leadId) {
+	public PageResponse<ProposalResponse> findAll(Long ownerId, Long leadId, Pageable pageable) {
 		findLeadByIdAndOwnerId(leadId, ownerId);
 
-		return proposalRepository.findByLeadIdAndLeadOwnerIdOrderBySentAtDescCreatedAtDesc(leadId, ownerId)
-				.stream()
-				.map(this::toResponse)
-				.toList();
+		return PageResponse.from(
+				proposalRepository.findByLeadIdAndLeadOwnerId(leadId, ownerId, pageable).map(this::toResponse)
+		);
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package com.leadfy.api.controller;
 import com.leadfy.api.dto.request.CreateProposalRequest;
 import com.leadfy.api.dto.request.UpdateProposalRequest;
 import com.leadfy.api.dto.request.UpdateProposalStatusRequest;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.dto.response.ProposalResponse;
 import com.leadfy.api.security.AuthenticatedUser;
 import com.leadfy.api.service.ProposalService;
@@ -10,7 +11,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,11 +53,12 @@ public class ProposalController {
 
 	@GetMapping
 	@Operation(summary = "List proposals from a lead")
-	public ResponseEntity<List<ProposalResponse>> findAll(
+	public ResponseEntity<PageResponse<ProposalResponse>> findAll(
 			@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-			@PathVariable Long leadId
+			@PathVariable Long leadId,
+			@PageableDefault(size = 20, sort = "sentAt", direction = Sort.Direction.DESC) Pageable pageable
 	) {
-		return ResponseEntity.ok(proposalService.findAll(authenticatedUser.getId(), leadId));
+		return ResponseEntity.ok(proposalService.findAll(authenticatedUser.getId(), leadId, pageable));
 	}
 
 	@GetMapping("/{proposalId}")

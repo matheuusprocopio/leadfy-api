@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 // Runs LeadRepository's queries against a real Postgres instance, unlike the mocked unit tests.
 @DataJpaTest
@@ -40,9 +42,10 @@ class LeadRepositoryIT extends AbstractIntegrationTest {
 		persistLead(ownerA, "Lead A");
 		persistLead(ownerB, "Lead B");
 
-		List<Lead> ownerALeads = leadRepository.findByOwnerIdOrderByCreatedAtDesc(ownerA.getId());
+		Page<Lead> ownerALeads = leadRepository.findByOwnerId(ownerA.getId(), PageRequest.of(0, 20));
 
-		assertThat(ownerALeads).extracting(Lead::getName).containsExactly("Lead A");
+		assertThat(ownerALeads.getContent()).extracting(Lead::getName).containsExactly("Lead A");
+		assertThat(ownerALeads.getTotalElements()).isEqualTo(1);
 	}
 
 	@Test

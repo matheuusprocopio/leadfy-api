@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.leadfy.api.dto.request.CreateInteractionRequest;
 import com.leadfy.api.dto.request.UpdateInteractionRequest;
 import com.leadfy.api.dto.response.InteractionResponse;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.entity.Interaction;
 import com.leadfy.api.entity.Lead;
 import com.leadfy.api.entity.User;
@@ -27,6 +28,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -121,15 +125,16 @@ class InteractionServiceImplTest {
 		Lead lead = leadWithId(LEAD_ID, userWithId(OWNER_ID));
 		Interaction firstInteraction = interactionWithId(100L, lead, InteractionType.MEETING);
 		Interaction secondInteraction = interactionWithId(101L, lead, InteractionType.WHATSAPP);
+		Pageable pageable = PageRequest.of(0, 20);
 
 		when(leadRepository.findByIdAndOwnerId(LEAD_ID, OWNER_ID)).thenReturn(Optional.of(lead));
-		when(interactionRepository.findByLeadIdAndLeadOwnerIdOrderByInteractionDateDescCreatedAtDesc(LEAD_ID, OWNER_ID))
-				.thenReturn(List.of(firstInteraction, secondInteraction));
+		when(interactionRepository.findByLeadIdAndLeadOwnerId(LEAD_ID, OWNER_ID, pageable))
+				.thenReturn(new PageImpl<>(List.of(firstInteraction, secondInteraction), pageable, 2));
 
-		List<InteractionResponse> responses = interactionService.findAll(OWNER_ID, LEAD_ID);
+		PageResponse<InteractionResponse> response = interactionService.findAll(OWNER_ID, LEAD_ID, pageable);
 
-		assertThat(responses).hasSize(2);
-		assertThat(responses).extracting(InteractionResponse::id).containsExactly(100L, 101L);
+		assertThat(response.content()).hasSize(2);
+		assertThat(response.content()).extracting(InteractionResponse::id).containsExactly(100L, 101L);
 	}
 
 	@Test

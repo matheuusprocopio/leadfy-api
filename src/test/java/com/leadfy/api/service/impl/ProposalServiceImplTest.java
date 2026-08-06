@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.leadfy.api.dto.request.CreateProposalRequest;
 import com.leadfy.api.dto.request.UpdateProposalRequest;
 import com.leadfy.api.dto.request.UpdateProposalStatusRequest;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.dto.response.ProposalResponse;
 import com.leadfy.api.entity.Lead;
 import com.leadfy.api.entity.Proposal;
@@ -33,6 +34,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -105,15 +109,16 @@ class ProposalServiceImplTest {
 		Lead lead = leadWithId(LEAD_ID, userWithId(OWNER_ID));
 		Proposal firstProposal = proposalWithId(100L, lead);
 		Proposal secondProposal = proposalWithId(101L, lead);
+		Pageable pageable = PageRequest.of(0, 20);
 
 		when(leadRepository.findByIdAndOwnerId(LEAD_ID, OWNER_ID)).thenReturn(Optional.of(lead));
-		when(proposalRepository.findByLeadIdAndLeadOwnerIdOrderBySentAtDescCreatedAtDesc(LEAD_ID, OWNER_ID))
-				.thenReturn(List.of(firstProposal, secondProposal));
+		when(proposalRepository.findByLeadIdAndLeadOwnerId(LEAD_ID, OWNER_ID, pageable))
+				.thenReturn(new PageImpl<>(List.of(firstProposal, secondProposal), pageable, 2));
 
-		List<ProposalResponse> responses = proposalService.findAll(OWNER_ID, LEAD_ID);
+		PageResponse<ProposalResponse> response = proposalService.findAll(OWNER_ID, LEAD_ID, pageable);
 
-		assertThat(responses).hasSize(2);
-		assertThat(responses).extracting(ProposalResponse::id).containsExactly(100L, 101L);
+		assertThat(response.content()).hasSize(2);
+		assertThat(response.content()).extracting(ProposalResponse::id).containsExactly(100L, 101L);
 	}
 
 	@Test

@@ -10,12 +10,13 @@ import com.leadfy.api.entity.User;
 import com.leadfy.api.enums.LeadSource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
@@ -37,13 +38,13 @@ class ProposalRepositoryIT extends AbstractIntegrationTest {
 		Lead leadA = persistLead(ownerA, "Lead A");
 		persistProposal(leadA, LocalDate.now().minusDays(2));
 
-		List<Proposal> asOwnerA = proposalRepository
-				.findByLeadIdAndLeadOwnerIdOrderBySentAtDescCreatedAtDesc(leadA.getId(), ownerA.getId());
-		List<Proposal> asOwnerB = proposalRepository
-				.findByLeadIdAndLeadOwnerIdOrderBySentAtDescCreatedAtDesc(leadA.getId(), ownerB.getId());
+		Page<Proposal> asOwnerA = proposalRepository
+				.findByLeadIdAndLeadOwnerId(leadA.getId(), ownerA.getId(), PageRequest.of(0, 20));
+		Page<Proposal> asOwnerB = proposalRepository
+				.findByLeadIdAndLeadOwnerId(leadA.getId(), ownerB.getId(), PageRequest.of(0, 20));
 
-		assertThat(asOwnerA).hasSize(1);
-		assertThat(asOwnerB).isEmpty();
+		assertThat(asOwnerA.getContent()).hasSize(1);
+		assertThat(asOwnerB.getContent()).isEmpty();
 	}
 
 	@Test

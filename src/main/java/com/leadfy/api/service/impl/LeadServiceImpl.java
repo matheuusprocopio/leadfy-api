@@ -4,6 +4,7 @@ import com.leadfy.api.dto.request.CreateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadStatusRequest;
 import com.leadfy.api.dto.response.LeadResponse;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.entity.Lead;
 import com.leadfy.api.entity.User;
 import com.leadfy.api.exception.ResourceNotFoundException;
@@ -13,6 +14,7 @@ import com.leadfy.api.service.LeadService;
 import com.leadfy.api.service.LeadStatusTransitionValidator;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,11 +56,8 @@ public class LeadServiceImpl implements LeadService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<LeadResponse> findAll(Long ownerId) {
-		return leadRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
-				.stream()
-				.map(this::toResponse)
-				.toList();
+	public PageResponse<LeadResponse> findAll(Long ownerId, Pageable pageable) {
+		return PageResponse.from(leadRepository.findByOwnerId(ownerId, pageable).map(this::toResponse));
 	}
 
 	@Override

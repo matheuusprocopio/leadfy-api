@@ -11,6 +11,7 @@ import com.leadfy.api.dto.request.CreateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadStatusRequest;
 import com.leadfy.api.dto.response.LeadResponse;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.entity.Lead;
 import com.leadfy.api.entity.User;
 import com.leadfy.api.enums.LeadSource;
@@ -29,6 +30,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -88,14 +92,16 @@ class LeadServiceImplTest {
 	void findAllShouldReturnOnlyLeadsFromOwner() {
 		Lead firstLead = leadWithId(10L, userWithId(OWNER_ID));
 		Lead secondLead = leadWithId(11L, userWithId(OWNER_ID));
+		Pageable pageable = PageRequest.of(0, 20);
 
-		when(leadRepository.findByOwnerIdOrderByCreatedAtDesc(OWNER_ID))
-				.thenReturn(List.of(firstLead, secondLead));
+		when(leadRepository.findByOwnerId(OWNER_ID, pageable))
+				.thenReturn(new PageImpl<>(List.of(firstLead, secondLead), pageable, 2));
 
-		List<LeadResponse> responses = leadService.findAll(OWNER_ID);
+		PageResponse<LeadResponse> response = leadService.findAll(OWNER_ID, pageable);
 
-		assertThat(responses).hasSize(2);
-		assertThat(responses).extracting(LeadResponse::id).containsExactly(10L, 11L);
+		assertThat(response.content()).hasSize(2);
+		assertThat(response.totalElements()).isEqualTo(2);
+		assertThat(response.content()).extracting(LeadResponse::id).containsExactly(10L, 11L);
 	}
 
 	@Test

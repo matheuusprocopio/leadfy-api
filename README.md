@@ -1,5 +1,7 @@
 # Leadfy API
 
+[![CI](https://github.com/matheuusprocopio/leadfy-api/actions/workflows/ci.yml/badge.svg)](https://github.com/matheuusprocopio/leadfy-api/actions/workflows/ci.yml)
+
 API REST de um mini-CRM de prospecção para freelancers, desenvolvida com Java e Spring Boot.
 
 A aplicação permite que um freelancer cadastre leads (clientes em potencial), acompanhe
@@ -18,10 +20,12 @@ compartilhamento entre contas.
 - Registro de propostas por lead, com valor e status (`SENT`, `ACCEPTED`, `REJECTED`)
 - Métricas agregadas: taxa de conversão geral, conversão por origem do lead, tempo médio até fechamento, distribuição de leads por status
 - Job agendado que sinaliza leads sem interação há mais de N dias (configurável) como "parados"
+- Listagens paginadas (leads, interações, propostas)
 - Tratamento centralizado de exceções, com respostas de erro padronizadas
 - Documentação interativa com Swagger/OpenAPI
 - Migrations versionadas com Flyway
 - Testes unitários (JUnit 5 + Mockito) e de integração (Testcontainers + PostgreSQL real)
+- Pipeline de CI (GitHub Actions) rodando a suíte completa a cada push/PR
 - Deploy com Docker Compose em um único comando
 
 ## Tecnologias
@@ -166,7 +170,7 @@ Transições fora desse grafo (ex.: `NEW → CLOSED` direto) são rejeitadas com
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | POST | `/api/leads` | Cria um lead |
-| GET | `/api/leads` | Lista os leads do usuário autenticado |
+| GET | `/api/leads` | Lista os leads do usuário autenticado (paginado) |
 | GET | `/api/leads/stale` | Lista os leads sinalizados como parados |
 | GET | `/api/leads/{leadId}` | Busca um lead por id |
 | PUT | `/api/leads/{leadId}` | Atualiza os dados de um lead |
@@ -178,7 +182,7 @@ Transições fora desse grafo (ex.: `NEW → CLOSED` direto) são rejeitadas com
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | POST | `/api/leads/{leadId}/interactions` | Registra uma interação no lead |
-| GET | `/api/leads/{leadId}/interactions` | Lista interações do lead |
+| GET | `/api/leads/{leadId}/interactions` | Lista interações do lead (paginado) |
 | GET | `/api/leads/{leadId}/interactions/{interactionId}` | Busca uma interação por id |
 | PUT | `/api/leads/{leadId}/interactions/{interactionId}` | Atualiza uma interação |
 | DELETE | `/api/leads/{leadId}/interactions/{interactionId}` | Remove uma interação |
@@ -188,7 +192,7 @@ Transições fora desse grafo (ex.: `NEW → CLOSED` direto) são rejeitadas com
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | POST | `/api/leads/{leadId}/proposals` | Cria uma proposta para o lead |
-| GET | `/api/leads/{leadId}/proposals` | Lista propostas do lead |
+| GET | `/api/leads/{leadId}/proposals` | Lista propostas do lead (paginado) |
 | GET | `/api/leads/{leadId}/proposals/{proposalId}` | Busca uma proposta por id |
 | PUT | `/api/leads/{leadId}/proposals/{proposalId}` | Atualiza uma proposta |
 | PATCH | `/api/leads/{leadId}/proposals/{proposalId}/status` | Atualiza o status da proposta |
@@ -201,6 +205,23 @@ Transições fora desse grafo (ex.: `NEW → CLOSED` direto) são rejeitadas com
 | GET | `/api/metrics/overview` | Totais, taxa de conversão geral e por origem, tempo médio até fechamento e distribuição por status |
 
 Todos os endpoints acima (exceto `/api/auth/*`) exigem o header `Authorization: Bearer <token>`.
+
+### Paginação
+
+Os endpoints marcados como "paginado" aceitam os query params padrão do Spring Data:
+`page` (0-indexado, default `0`), `size` (default `20`) e `sort` (ex.:
+`sort=name,asc`). A resposta segue sempre o mesmo formato:
+
+```json
+{
+  "content": [ ... ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 42,
+  "totalPages": 3,
+  "last": false
+}
+```
 
 ## Exemplos de Requisição
 

@@ -3,13 +3,16 @@ package com.leadfy.api.controller;
 import com.leadfy.api.dto.request.CreateInteractionRequest;
 import com.leadfy.api.dto.request.UpdateInteractionRequest;
 import com.leadfy.api.dto.response.InteractionResponse;
+import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.security.AuthenticatedUser;
 import com.leadfy.api.service.InteractionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -48,11 +51,12 @@ public class InteractionController {
 
 	@GetMapping
 	@Operation(summary = "List interactions from a lead")
-	public ResponseEntity<List<InteractionResponse>> findAll(
+	public ResponseEntity<PageResponse<InteractionResponse>> findAll(
 			@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-			@PathVariable Long leadId
+			@PathVariable Long leadId,
+			@PageableDefault(size = 20, sort = "interactionDate", direction = Sort.Direction.DESC) Pageable pageable
 	) {
-		return ResponseEntity.ok(interactionService.findAll(authenticatedUser.getId(), leadId));
+		return ResponseEntity.ok(interactionService.findAll(authenticatedUser.getId(), leadId, pageable));
 	}
 
 	@GetMapping("/{interactionId}")
