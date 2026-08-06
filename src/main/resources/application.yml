@@ -16,7 +16,8 @@ spring:
     enabled: true
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Render (and most PaaS providers) inject PORT at runtime; SERVER_PORT stays as the local/Docker override.
+  port: ${PORT:${SERVER_PORT:8080}}
 
 security:
   jwt:
