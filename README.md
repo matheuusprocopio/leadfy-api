@@ -96,7 +96,7 @@ por variáveis de ambiente, com defaults de desenvolvimento no `application.yml`
 ```yaml
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/leadfy}
+    url: ${DB_URL:jdbc:postgresql://localhost:5544/leadfy}
     username: ${DB_USERNAME:leadfy}
     password: ${DB_PASSWORD:leadfy}
 
@@ -335,8 +335,13 @@ instância local já em uso).
 
 ### Sem Docker
 
-Requer um PostgreSQL rodando localmente (ajuste `DB_URL`, `DB_USERNAME` e `DB_PASSWORD`
-conforme necessário):
+Para rodar a API pelo Maven ou IntelliJ, suba apenas o PostgreSQL do Compose:
+
+```bash
+docker compose up -d db
+```
+
+Depois inicie a aplicação:
 
 ```bash
 # Linux/macOS
@@ -345,6 +350,14 @@ conforme necessário):
 # Windows
 mvnw.cmd spring-boot:run
 ```
+
+O default local da API aponta para `jdbc:postgresql://localhost:5544/leadfy`,
+que é a porta publicada pelo `docker-compose.yml`. Se você preferir usar outro
+PostgreSQL, ajuste `DB_URL`, `DB_USERNAME` e `DB_PASSWORD`.
+
+No IntelliJ IDEA, abra `src/main/java/com/leadfy/api/LeadfyApiApplication.java` e rode
+a classe pelo botão verde. Se o banco do Compose estiver ativo, nenhuma variável de
+ambiente extra é necessária.
 
 ## Testes
 
