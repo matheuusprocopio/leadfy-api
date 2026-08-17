@@ -52,6 +52,27 @@ public class GlobalExceptionHandler {
 				.body(ErrorResponse.of("INVALID_PROPOSAL_STATUS_TRANSITION", exception.getMessage()));
 	}
 
+	@ExceptionHandler(AiInsightsUnavailableException.class)
+	public ResponseEntity<ErrorResponse> handleAiInsightsUnavailable(AiInsightsUnavailableException exception) {
+		return ResponseEntity
+				.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(ErrorResponse.of("AI_INSIGHTS_UNAVAILABLE", exception.getMessage()));
+	}
+
+	@ExceptionHandler(AiClientException.class)
+	public ResponseEntity<ErrorResponse> handleAiClient(AiClientException exception) {
+		return ResponseEntity
+				.status(HttpStatus.BAD_GATEWAY)
+				.body(ErrorResponse.of("AI_PROVIDER_ERROR", exception.getMessage()));
+	}
+
+	@ExceptionHandler(AiResponseParsingException.class)
+	public ResponseEntity<ErrorResponse> handleAiResponseParsing(AiResponseParsingException exception) {
+		return ResponseEntity
+				.status(HttpStatus.BAD_GATEWAY)
+				.body(ErrorResponse.of("AI_INVALID_RESPONSE", exception.getMessage()));
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
 		String message = exception.getBindingResult()

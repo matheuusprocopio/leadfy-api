@@ -29,3 +29,8 @@ leadfy:
   stale-lead:
     threshold-days: ${STALE_LEAD_THRESHOLD_DAYS:7}
     cron: ${STALE_LEAD_CRON:0 0 2 * * *}
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_MODEL:gpt-4o-mini}
+      timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:10}
