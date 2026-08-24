@@ -10,6 +10,7 @@ import com.leadfy.api.service.AiLeadInsightContext;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -34,12 +35,13 @@ public class OpenAiClient implements AiClient {
 	private final String apiKey;
 	private final String model;
 
+	@Autowired
 	public OpenAiClient(
 			RestClient.Builder restClientBuilder,
 			ObjectMapper objectMapper,
 			@Value("${leadfy.ai.openai.api-key:}") String apiKey,
 			@Value("${leadfy.ai.openai.model:gpt-4o-mini}") String model,
-			@Value("${leadfy.ai.openai.timeout-seconds:10}") int timeoutSeconds
+			@Value("${leadfy.ai.openai.timeout-seconds:10}") String timeoutSeconds
 	) {
 		this(
 				restClientBuilder
@@ -219,14 +221,27 @@ public class OpenAiClient implements AiClient {
 		throw invalidAiResponse("OpenAI response does not include output text");
 	}
 
-	private static SimpleClientHttpRequestFactory createRequestFactory(int timeoutSeconds) {
-		int normalizedTimeoutSeconds = timeoutSeconds > 0 ? timeoutSeconds : DEFAULT_TIMEOUT_SECONDS;
+	private static SimpleClientHttpRequestFactory createRequestFactory(String timeoutSeconds) {
+		int normalizedTimeoutSeconds = parseTimeoutSeconds(timeoutSeconds);
 		Duration timeout = Duration.ofSeconds(normalizedTimeoutSeconds);
 
 		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
 		requestFactory.setConnectTimeout(timeout);
 		requestFactory.setReadTimeout(timeout);
 		return requestFactory;
+	}
+
+	private static int parseTimeoutSeconds(String timeoutSeconds) {
+		if (!hasText(timeoutSeconds)) {
+			return DEFAULT_TIMEOUT_SECONDS;
+		}
+
+		try {
+			int parsedTimeoutSeconds = Integer.parseInt(timeoutSeconds.trim());
+			return parsedTimeoutSeconds > 0 ? parsedTimeoutSeconds : DEFAULT_TIMEOUT_SECONDS;
+		} catch (NumberFormatException exception) {
+			return DEFAULT_TIMEOUT_SECONDS;
+		}
 	}
 
 	private static String normalize(String value) {

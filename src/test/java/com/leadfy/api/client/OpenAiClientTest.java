@@ -1,6 +1,7 @@
 package com.leadfy.api.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -66,10 +67,18 @@ class OpenAiClientTest {
 
 	@Test
 	void generateLeadInsightShouldFailWhenApiKeyIsMissing() {
-		OpenAiClient client = new OpenAiClient(RestClient.builder(), objectMapper, " ", "test-model", 5);
+		OpenAiClient client = new OpenAiClient(RestClient.builder(), objectMapper, " ", "test-model", "5");
 
 		assertThatThrownBy(() -> client.generateLeadInsight(context()))
 				.isInstanceOf(AiInsightsUnavailableException.class);
+	}
+
+	@Test
+	void constructorShouldUseDefaultTimeoutWhenPropertyIsBlankOrInvalid() {
+		assertThatCode(() -> new OpenAiClient(RestClient.builder(), objectMapper, "test-key", "test-model", " "))
+				.doesNotThrowAnyException();
+		assertThatCode(() -> new OpenAiClient(RestClient.builder(), objectMapper, "test-key", "test-model", "invalid"))
+				.doesNotThrowAnyException();
 	}
 
 	@Test
