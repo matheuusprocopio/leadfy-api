@@ -3,9 +3,11 @@ package com.leadfy.api.controller;
 import com.leadfy.api.dto.request.CreateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadRequest;
 import com.leadfy.api.dto.request.UpdateLeadStatusRequest;
+import com.leadfy.api.dto.response.AiLeadInsightResponse;
 import com.leadfy.api.dto.response.LeadResponse;
 import com.leadfy.api.dto.response.PageResponse;
 import com.leadfy.api.security.AuthenticatedUser;
+import com.leadfy.api.service.AiLeadInsightService;
 import com.leadfy.api.service.LeadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,9 +37,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class LeadController {
 
 	private final LeadService leadService;
+	private final AiLeadInsightService aiLeadInsightService;
 
-	public LeadController(LeadService leadService) {
+	public LeadController(LeadService leadService, AiLeadInsightService aiLeadInsightService) {
 		this.leadService = leadService;
+		this.aiLeadInsightService = aiLeadInsightService;
 	}
 
 	@PostMapping
@@ -75,6 +79,15 @@ public class LeadController {
 			@PathVariable Long leadId
 	) {
 		return ResponseEntity.ok(leadService.findById(authenticatedUser.getId(), leadId));
+	}
+
+	@PostMapping("/{leadId}/ai-insights")
+	@Operation(summary = "Generate AI insight for a lead")
+	public ResponseEntity<AiLeadInsightResponse> generateAiInsight(
+			@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+			@PathVariable Long leadId
+	) {
+		return ResponseEntity.ok(aiLeadInsightService.generate(authenticatedUser.getId(), leadId));
 	}
 
 	@PutMapping("/{leadId}")
