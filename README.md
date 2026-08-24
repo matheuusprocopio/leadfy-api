@@ -25,6 +25,7 @@ compartilhamento entre contas.
 - Registro de propostas por lead, com valor e status (`SENT`, `ACCEPTED`, `REJECTED`)
 - Métricas agregadas: taxa de conversão geral, conversão por origem do lead, tempo médio até fechamento, distribuição de leads por status
 - Job agendado que sinaliza leads sem interação há mais de N dias (configurável) como "parados"
+- Leadfy AI Coach: análise inteligente do histórico comercial de um lead com recomendação de próximo contato
 - Listagens paginadas (leads, interações, propostas)
 - Tratamento centralizado de exceções, com respostas de erro padronizadas
 - Documentação interativa com Swagger/OpenAPI
@@ -45,6 +46,7 @@ compartilhamento entre contas.
 - Flyway
 - Maven
 - Swagger / OpenAPI (springdoc)
+- OpenAI Responses API
 - JUnit 5, Mockito, AssertJ
 - Testcontainers
 - Docker / Docker Compose
@@ -67,6 +69,7 @@ separados das entidades JPA — nenhuma entidade é exposta diretamente pela API
 
 ```
 src/main/java/com/leadfy/api
+├── client           # Clientes externos, como OpenAI
 ├── config          # Security, OpenAPI
 ├── controller       # Endpoints REST
 ├── dto
@@ -83,6 +86,7 @@ src/main/java/com/leadfy/api
 ```
 
 - `security`: filtro JWT, geração/validação de token e carregamento do usuário autenticado
+- `client`: integrações externas isoladas dos services, incluindo o client da OpenAI
 - `service.LeadStatusTransitionValidator` / `service.ProposalStatusTransitionValidator`: mapas de transições válidas por status — a regra do funil vive aqui, não espalhada em `if/else` pelos services
 - `repository`: além dos métodos derivados, concentra as queries JPQL/nativas de agregação usadas pelo endpoint de métricas e pelo job de leads parados
 - `exception` + `GlobalExceptionHandler` (`@RestControllerAdvice`): qualquer exceção de domínio vira uma resposta padronizada `{ code, message, timestamp }`
@@ -108,7 +112,43 @@ leadfy:
   stale-lead:
     threshold-days: ${STALE_LEAD_THRESHOLD_DAYS:7}
     cron: ${STALE_LEAD_CRON:0 0 2 * * *}
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_MODEL:gpt-4o-mini}
+      timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:10}
 ```
+
+## Leadfy AI Coach
+
+O Leadfy AI Coach usa a API da OpenAI no backend para analisar o histórico comercial de
+um lead e sugerir o próximo melhor contato. O front-end nunca chama a OpenAI
+diretamente; a chave fica somente no backend via `OPENAI_API_KEY`.
+
+Dados enviados para a IA:
+
+- Nome, empresa, origem, status, flag de lead parado e datas comerciais do lead
+- Observações do lead, com normalização e truncamento
+- Até 5 interações recentes, com tipo, descrição e data
+- Até 5 propostas recentes, com valor, status e datas
+
+Dados não enviados:
+
+- Senha, JWT, e-mail do usuário autenticado ou qualquer dado interno do usuário
+- E-mail e telefone do lead
+- Chaves de API ou segredos de ambiente
+
+Configuração:
+
+| Variável | Descrição | Default |
+|----------|-----------|---------|
+| `OPENAI_API_KEY` | Chave usada pelo backend para chamar a OpenAI | vazio |
+| `OPENAI_MODEL` | Modelo usado pelo AI Coach | `gpt-4o-mini` |
+| `OPENAI_TIMEOUT_SECONDS` | Timeout da chamada externa | `10` |
+
+Se `OPENAI_API_KEY` não estiver configurada, o endpoint retorna `503` com
+`AI_INSIGHTS_UNAVAILABLE`. Erros do provedor ou respostas inválidas retornam `502`
+com `AI_PROVIDER_ERROR` ou `AI_INVALID_RESPONSE`.
 
 ## Modelo Relacional
 
@@ -189,6 +229,7 @@ Transições fora desse grafo (ex.: `NEW → CLOSED` direto) são rejeitadas com
 | GET | `/api/leads` | Lista os leads do usuário autenticado (paginado) |
 | GET | `/api/leads/stale` | Lista os leads sinalizados como parados |
 | GET | `/api/leads/{leadId}` | Busca um lead por id |
+| POST | `/api/leads/{leadId}/ai-insights` | Gera a análise inteligente do Leadfy AI Coach |
 | PUT | `/api/leads/{leadId}` | Atualiza os dados de um lead |
 | PATCH | `/api/leads/{leadId}/status` | Atualiza o status do lead (validando a transição) |
 | DELETE | `/api/leads/{leadId}` | Remove um lead |
@@ -300,6 +341,33 @@ POST /api/leads/{leadId}/proposals
 {
   "amount": 4500.00,
   "sentAt": "2026-08-05"
+}
+```
+
+### Gerar análise inteligente do lead
+
+```text
+POST /api/leads/{leadId}/ai-insights
+Authorization: Bearer <token>
+```
+
+Exemplo de resposta:
+
+```json
+{
+  "priorityScore": 82,
+  "summary": "Lead com boa chance de avanço, mas sem retorno recente.",
+  "conversionSignals": [
+    "Interesse registrado em automação",
+    "Proposta já enviada"
+  ],
+  "riskSignals": [
+    "Sem interação recente após o envio da proposta"
+  ],
+  "nextBestAction": "Enviar um follow-up consultivo retomando o valor da proposta.",
+  "suggestedMessage": "Oi, tudo bem? Queria saber se ficou alguma dúvida sobre a proposta e se posso ajudar com o próximo passo.",
+  "confidence": "MEDIUM",
+  "generatedAt": "2026-08-24T22:30:00Z"
 }
 ```
 
