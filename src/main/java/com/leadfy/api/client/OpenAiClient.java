@@ -41,10 +41,19 @@ public class OpenAiClient implements AiClient {
 			@Value("${leadfy.ai.openai.model:gpt-4o-mini}") String model,
 			@Value("${leadfy.ai.openai.timeout-seconds:10}") int timeoutSeconds
 	) {
-		this.restClient = restClientBuilder
-				.baseUrl(OPENAI_BASE_URL)
-				.requestFactory(createRequestFactory(timeoutSeconds))
-				.build();
+		this(
+				restClientBuilder
+						.baseUrl(OPENAI_BASE_URL)
+						.requestFactory(createRequestFactory(timeoutSeconds))
+						.build(),
+				objectMapper,
+				apiKey,
+				model
+		);
+	}
+
+	OpenAiClient(RestClient restClient, ObjectMapper objectMapper, String apiKey, String model) {
+		this.restClient = restClient;
 		this.objectMapper = objectMapper;
 		this.apiKey = normalize(apiKey);
 		this.model = hasText(model) ? model.trim() : DEFAULT_MODEL;
