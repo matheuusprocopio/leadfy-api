@@ -124,8 +124,9 @@ public class AiLeadRecommendationServiceImpl implements AiLeadRecommendationServ
 	}
 
 	private AiLeadRecommendation generateForLead(Lead lead) {
+		AiClient aiClient = getAiClient();
 		AiLeadInsightContext context = contextBuilder.build(lead);
-		AiLeadInsightResult result = getAiClient().generateLeadInsight(context);
+		AiLeadInsightResult result = aiClient.generateLeadInsight(context);
 		NormalizedAiLeadInsight insight = resultNormalizer.normalize(result);
 
 		aiLeadRecommendationRepository.deactivateActiveRecommendationsForLead(lead.getId());
