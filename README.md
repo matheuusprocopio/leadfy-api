@@ -26,6 +26,7 @@ compartilhamento entre contas.
 - Métricas agregadas: taxa de conversão geral, conversão por origem do lead, tempo médio até fechamento, distribuição de leads por status
 - Job agendado que sinaliza leads sem interação há mais de N dias (configurável) como "parados"
 - Leadfy AI Coach: análise inteligente do histórico comercial de um lead com recomendação de próximo contato
+- Radar IA: geração persistida de prioridades comerciais, fila de próximas ações, feedback humano e métricas de impacto
 - Listagens paginadas (leads, interações, propostas)
 - Tratamento centralizado de exceções, com respostas de erro padronizadas
 - Documentação interativa com Swagger/OpenAPI
@@ -117,6 +118,9 @@ leadfy:
       api-key: ${OPENAI_API_KEY:}
       model: ${OPENAI_MODEL:gpt-4o-mini}
       timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:10}
+    recommendation:
+      cron: ${AI_RECOMMENDATION_CRON:0 30 7 * * *}
+      max-leads-per-run: ${AI_RECOMMENDATION_MAX_LEADS_PER_RUN:25}
 ```
 
 ## Leadfy AI Coach
@@ -150,6 +154,27 @@ Se `OPENAI_API_KEY` não estiver configurada, o endpoint retorna `503` com
 `AI_INSIGHTS_UNAVAILABLE`. Erros do provedor ou respostas inválidas retornam `502`
 com `AI_PROVIDER_ERROR` ou `AI_INVALID_RESPONSE`.
 
+## Radar IA
+
+O Radar IA reutiliza o mesmo pipeline de contexto e validação do Leadfy AI Coach, mas
+persiste recomendações em `ai_lead_recommendations`. Cada recomendação guarda score,
+resumo, sinais, próxima ação, mensagem sugerida, confiança, status de revisão e feedback
+humano.
+
+O job `AiLeadRecommendationScheduler` roda diariamente por padrão e renova recomendações
+para leads abertos, priorizando leads parados e leads sem recomendação ativa recente.
+Também é possível gerar uma recomendação sob demanda para um lead específico.
+
+Status possíveis da recomendação:
+
+- `PENDING`: recomendação ainda ativa na fila
+- `ACTIONED`: usuário executou a ação recomendada
+- `DISMISSED`: usuário decidiu não executar a recomendação
+
+Quando uma recomendação é marcada como `ACTIONED` ou `DISMISSED`, ela deixa de aparecer
+na fila ativa. As métricas continuam considerando o histórico para medir ação, utilidade
+e conversão dos leads recomendados.
+
 ## Modelo Relacional
 
 Um usuário (freelancer) possui vários leads; cada lead pertence a um único usuário e
@@ -160,6 +185,8 @@ erDiagram
     USERS ||--o{ LEADS : owns
     LEADS ||--o{ INTERACTIONS : has
     LEADS ||--o{ PROPOSALS : has
+    USERS ||--o{ AI_LEAD_RECOMMENDATIONS : owns
+    LEADS ||--o{ AI_LEAD_RECOMMENDATIONS : receives
 
     USERS {
         bigint id PK
@@ -189,6 +216,17 @@ erDiagram
         varchar status
         date sent_at
         bigint lead_id FK
+    }
+    AI_LEAD_RECOMMENDATIONS {
+        bigint id PK
+        bigint owner_id FK
+        bigint lead_id FK
+        integer priority_score
+        varchar confidence
+        varchar status
+        boolean useful
+        boolean active
+        timestamp generated_at
     }
 ```
 
@@ -259,7 +297,15 @@ Transições fora desse grafo (ex.: `NEW → CLOSED` direto) são rejeitadas com
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/api/metrics/overview` | Totais, taxa de conversão geral e por origem, tempo médio até fechamento e distribuição por status |
+| GET | `/api/metrics/overview` | Totais, taxa de conversão, funil, leads parados e impacto das recomendações IA |
+
+### Recomendações IA
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/ai/recommendations` | Lista recomendações IA ativas do usuário autenticado |
+| POST | `/api/ai/recommendations/leads/{leadId}` | Gera e persiste uma recomendação IA para um lead |
+| PATCH | `/api/ai/recommendations/{recommendationId}/feedback` | Registra feedback humano da recomendação |
 
 Todos os endpoints acima (exceto `/api/auth/*`) exigem o header `Authorization: Bearer <token>`.
 
@@ -371,6 +417,23 @@ Exemplo de resposta:
 }
 ```
 
+### Gerar prioridade IA para o dashboard
+
+```text
+POST /api/ai/recommendations/leads/{leadId}
+Authorization: Bearer <token>
+```
+
+### Registrar feedback humano da recomendação
+
+```json
+PATCH /api/ai/recommendations/{recommendationId}/feedback
+{
+  "status": "ACTIONED",
+  "useful": true
+}
+```
+
 ## Enums
 
 **Status do lead (`LeadStatus`):** `NEW`, `CONTACT_MADE`, `PROPOSAL_SENT`, `NEGOTIATION`, `CLOSED`, `LOST`
@@ -380,6 +443,8 @@ Exemplo de resposta:
 **Tipo de interação (`InteractionType`):** `CALL`, `EMAIL`, `MEETING`, `WHATSAPP`, `OTHER`
 
 **Status da proposta (`ProposalStatus`):** `SENT`, `ACCEPTED`, `REJECTED`
+
+**Status da recomendação IA (`AiRecommendationStatus`):** `PENDING`, `ACTIONED`, `DISMISSED`
 
 ## Como Rodar Localmente
 
