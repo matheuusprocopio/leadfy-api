@@ -25,6 +25,8 @@ import com.leadfy.api.repository.InteractionRepository;
 import com.leadfy.api.repository.LeadRepository;
 import com.leadfy.api.repository.ProposalRepository;
 import com.leadfy.api.service.AiLeadInsightContext;
+import com.leadfy.api.service.AiLeadInsightContextBuilder;
+import com.leadfy.api.service.AiLeadInsightResultNormalizer;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -167,18 +169,16 @@ class AiLeadInsightServiceImplTest {
 
 	private AiLeadInsightServiceImpl serviceWithClient(AiClient client) {
 		return new AiLeadInsightServiceImpl(
-				leadRepository,
-				interactionRepository,
-				proposalRepository,
+				new AiLeadInsightContextBuilder(leadRepository, interactionRepository, proposalRepository),
+				new AiLeadInsightResultNormalizer(),
 				List.of(client)
 		);
 	}
 
 	private AiLeadInsightServiceImpl serviceWithoutClient() {
 		return new AiLeadInsightServiceImpl(
-				leadRepository,
-				interactionRepository,
-				proposalRepository,
+				new AiLeadInsightContextBuilder(leadRepository, interactionRepository, proposalRepository),
+				new AiLeadInsightResultNormalizer(),
 				List.of()
 		);
 	}
