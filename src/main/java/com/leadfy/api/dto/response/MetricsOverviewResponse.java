@@ -10,6 +10,12 @@ public record MetricsOverviewResponse(
 		Long lostLeads,
 		BigDecimal conversionRatePercentage,
 		BigDecimal averageDaysToClose,
+		Long aiRecommendedLeads,
+		Long aiRecommendedClosedLeads,
+		Long aiRecommendationActioned,
+		Long aiRecommendationUseful,
+		BigDecimal aiRecommendationConversionRatePercentage,
+		BigDecimal aiRecommendationActionRatePercentage,
 		List<LeadStatusMetricResponse> leadsByStatus,
 		List<LeadSourceConversionResponse> conversionBySource
 ) {

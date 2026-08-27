@@ -3,8 +3,10 @@ package com.leadfy.api.service.impl;
 import com.leadfy.api.dto.response.LeadSourceConversionResponse;
 import com.leadfy.api.dto.response.LeadStatusMetricResponse;
 import com.leadfy.api.dto.response.MetricsOverviewResponse;
+import com.leadfy.api.enums.AiRecommendationStatus;
 import com.leadfy.api.enums.LeadSource;
 import com.leadfy.api.enums.LeadStatus;
+import com.leadfy.api.repository.AiLeadRecommendationRepository;
 import com.leadfy.api.repository.LeadRepository;
 import com.leadfy.api.repository.projection.LeadSourceConversionProjection;
 import com.leadfy.api.repository.projection.LeadStatusCountProjection;
@@ -24,9 +26,14 @@ public class MetricsServiceImpl implements MetricsService {
 	private static final int METRIC_SCALE = 2;
 
 	private final LeadRepository leadRepository;
+	private final AiLeadRecommendationRepository aiLeadRecommendationRepository;
 
-	public MetricsServiceImpl(LeadRepository leadRepository) {
+	public MetricsServiceImpl(
+			LeadRepository leadRepository,
+			AiLeadRecommendationRepository aiLeadRecommendationRepository
+	) {
 		this.leadRepository = leadRepository;
+		this.aiLeadRecommendationRepository = aiLeadRecommendationRepository;
 	}
 
 	@Override
@@ -36,6 +43,16 @@ public class MetricsServiceImpl implements MetricsService {
 		Long closedLeads = leadRepository.countByOwnerIdAndStatus(ownerId, LeadStatus.CLOSED);
 		Long lostLeads = leadRepository.countByOwnerIdAndStatus(ownerId, LeadStatus.LOST);
 		Long openLeads = totalLeads - closedLeads - lostLeads;
+		Long aiRecommendedLeads = aiLeadRecommendationRepository.countRecommendedLeadsByOwnerId(ownerId);
+		Long aiRecommendedClosedLeads = aiLeadRecommendationRepository.countRecommendedClosedLeadsByOwnerId(
+				ownerId,
+				LeadStatus.CLOSED
+		);
+		Long aiRecommendationActioned = aiLeadRecommendationRepository.countByOwnerIdAndStatus(
+				ownerId,
+				AiRecommendationStatus.ACTIONED
+		);
+		Long aiRecommendationUseful = aiLeadRecommendationRepository.countByOwnerIdAndUsefulTrue(ownerId);
 
 		return new MetricsOverviewResponse(
 				totalLeads,
@@ -44,6 +61,12 @@ public class MetricsServiceImpl implements MetricsService {
 				lostLeads,
 				percentage(closedLeads, totalLeads),
 				normalizeAverageDays(leadRepository.averageDaysToCloseByOwnerId(ownerId)),
+				aiRecommendedLeads,
+				aiRecommendedClosedLeads,
+				aiRecommendationActioned,
+				aiRecommendationUseful,
+				percentage(aiRecommendedClosedLeads, aiRecommendedLeads),
+				percentage(aiRecommendationActioned, aiRecommendedLeads),
 				buildStatusMetrics(ownerId),
 				buildSourceConversionMetrics(ownerId)
 		);
