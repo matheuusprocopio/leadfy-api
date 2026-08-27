@@ -7,8 +7,10 @@ import static org.mockito.Mockito.when;
 import com.leadfy.api.dto.response.LeadSourceConversionResponse;
 import com.leadfy.api.dto.response.LeadStatusMetricResponse;
 import com.leadfy.api.dto.response.MetricsOverviewResponse;
+import com.leadfy.api.enums.AiRecommendationStatus;
 import com.leadfy.api.enums.LeadSource;
 import com.leadfy.api.enums.LeadStatus;
+import com.leadfy.api.repository.AiLeadRecommendationRepository;
 import com.leadfy.api.repository.LeadRepository;
 import com.leadfy.api.repository.projection.LeadSourceConversionProjection;
 import com.leadfy.api.repository.projection.LeadStatusCountProjection;
@@ -28,6 +30,9 @@ class MetricsServiceImplTest {
 	@Mock
 	private LeadRepository leadRepository;
 
+	@Mock
+	private AiLeadRecommendationRepository aiLeadRecommendationRepository;
+
 	@InjectMocks
 	private MetricsServiceImpl metricsService;
 
@@ -39,6 +44,12 @@ class MetricsServiceImplTest {
 		when(leadRepository.countLeadsByStatus(OWNER_ID)).thenReturn(List.of());
 		when(leadRepository.countConversionBySource(OWNER_ID, LeadStatus.CLOSED)).thenReturn(List.of());
 		when(leadRepository.averageDaysToCloseByOwnerId(OWNER_ID)).thenReturn(null);
+		when(aiLeadRecommendationRepository.countRecommendedLeadsByOwnerId(OWNER_ID)).thenReturn(0L);
+		when(aiLeadRecommendationRepository.countRecommendedClosedLeadsByOwnerId(OWNER_ID, LeadStatus.CLOSED))
+				.thenReturn(0L);
+		when(aiLeadRecommendationRepository.countByOwnerIdAndStatus(OWNER_ID, AiRecommendationStatus.ACTIONED))
+				.thenReturn(0L);
+		when(aiLeadRecommendationRepository.countByOwnerIdAndUsefulTrue(OWNER_ID)).thenReturn(0L);
 
 		MetricsOverviewResponse response = metricsService.overview(OWNER_ID);
 
@@ -48,6 +59,12 @@ class MetricsServiceImplTest {
 		assertThat(response.lostLeads()).isZero();
 		assertThat(response.conversionRatePercentage()).isEqualByComparingTo("0.00");
 		assertThat(response.averageDaysToClose()).isNull();
+		assertThat(response.aiRecommendedLeads()).isZero();
+		assertThat(response.aiRecommendedClosedLeads()).isZero();
+		assertThat(response.aiRecommendationActioned()).isZero();
+		assertThat(response.aiRecommendationUseful()).isZero();
+		assertThat(response.aiRecommendationConversionRatePercentage()).isEqualByComparingTo("0.00");
+		assertThat(response.aiRecommendationActionRatePercentage()).isEqualByComparingTo("0.00");
 		assertThat(response.leadsByStatus()).hasSize(LeadStatus.values().length);
 		assertThat(response.leadsByStatus()).extracting(LeadStatusMetricResponse::total)
 				.containsOnly(0L);
@@ -62,6 +79,12 @@ class MetricsServiceImplTest {
 		when(leadRepository.countByOwnerIdAndStatus(OWNER_ID, LeadStatus.CLOSED)).thenReturn(2L);
 		when(leadRepository.countByOwnerIdAndStatus(OWNER_ID, LeadStatus.LOST)).thenReturn(1L);
 		when(leadRepository.averageDaysToCloseByOwnerId(OWNER_ID)).thenReturn(new BigDecimal("12.345"));
+		when(aiLeadRecommendationRepository.countRecommendedLeadsByOwnerId(OWNER_ID)).thenReturn(3L);
+		when(aiLeadRecommendationRepository.countRecommendedClosedLeadsByOwnerId(OWNER_ID, LeadStatus.CLOSED))
+				.thenReturn(1L);
+		when(aiLeadRecommendationRepository.countByOwnerIdAndStatus(OWNER_ID, AiRecommendationStatus.ACTIONED))
+				.thenReturn(2L);
+		when(aiLeadRecommendationRepository.countByOwnerIdAndUsefulTrue(OWNER_ID)).thenReturn(1L);
 		when(leadRepository.countLeadsByStatus(OWNER_ID)).thenReturn(List.of(
 				new StatusCountProjection(LeadStatus.NEW, 1L),
 				new StatusCountProjection(LeadStatus.CONTACT_MADE, 1L),
@@ -81,6 +104,12 @@ class MetricsServiceImplTest {
 		assertThat(response.lostLeads()).isEqualTo(1L);
 		assertThat(response.conversionRatePercentage()).isEqualByComparingTo("40.00");
 		assertThat(response.averageDaysToClose()).isEqualByComparingTo("12.35");
+		assertThat(response.aiRecommendedLeads()).isEqualTo(3L);
+		assertThat(response.aiRecommendedClosedLeads()).isEqualTo(1L);
+		assertThat(response.aiRecommendationActioned()).isEqualTo(2L);
+		assertThat(response.aiRecommendationUseful()).isEqualTo(1L);
+		assertThat(response.aiRecommendationConversionRatePercentage()).isEqualByComparingTo("33.33");
+		assertThat(response.aiRecommendationActionRatePercentage()).isEqualByComparingTo("66.67");
 
 		assertStatusTotal(response, LeadStatus.NEW, 1L);
 		assertStatusTotal(response, LeadStatus.CONTACT_MADE, 1L);
