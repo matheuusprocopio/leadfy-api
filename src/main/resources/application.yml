@@ -34,3 +34,6 @@ leadfy:
       api-key: ${OPENAI_API_KEY:}
       model: ${OPENAI_MODEL:gpt-4o-mini}
       timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:10}
+    recommendation:
+      cron: ${AI_RECOMMENDATION_CRON:0 30 7 * * *}
+      max-leads-per-run: ${AI_RECOMMENDATION_MAX_LEADS_PER_RUN:25}
