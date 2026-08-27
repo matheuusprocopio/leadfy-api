@@ -5,6 +5,7 @@ import com.leadfy.api.enums.LeadStatus;
 import com.leadfy.api.repository.projection.LeadSourceConversionProjection;
 import com.leadfy.api.repository.projection.LeadStatusCountProjection;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -69,5 +70,26 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
 	List<Lead> findLeadsEligibleForStaleFlag(
 			@Param("cutoff") LocalDateTime cutoff,
 			@Param("excludedStatuses") Collection<LeadStatus> excludedStatuses
+	);
+
+	@Query("""
+			SELECT lead FROM Lead lead
+			WHERE lead.status NOT IN :excludedStatuses
+			  AND (
+			    lead.staleLead = true
+			    OR NOT EXISTS (
+			      SELECT recommendation.id
+			      FROM AiLeadRecommendation recommendation
+			      WHERE recommendation.lead = lead
+			        AND recommendation.active = true
+			        AND recommendation.generatedAt > :freshAfter
+			    )
+			  )
+			ORDER BY CASE WHEN lead.staleLead = true THEN 0 ELSE 1 END, lead.updatedAt ASC
+			""")
+	List<Lead> findLeadsEligibleForAiRecommendations(
+			@Param("freshAfter") Instant freshAfter,
+			@Param("excludedStatuses") Collection<LeadStatus> excludedStatuses,
+			Pageable pageable
 	);
 }
