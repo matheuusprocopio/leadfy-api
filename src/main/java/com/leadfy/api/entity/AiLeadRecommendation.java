@@ -118,6 +118,7 @@ public class AiLeadRecommendation {
 	public void updateFeedback(AiRecommendationStatus status, Boolean useful) {
 		this.status = status;
 		this.useful = status == AiRecommendationStatus.PENDING ? null : useful;
+		this.active = status == AiRecommendationStatus.PENDING;
 		this.reviewedAt = status == AiRecommendationStatus.PENDING ? null : Instant.now();
 	}
 

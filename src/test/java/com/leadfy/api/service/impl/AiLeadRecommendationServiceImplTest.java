@@ -136,6 +136,7 @@ class AiLeadRecommendationServiceImplTest {
 
 		assertThat(response.status()).isEqualTo(AiRecommendationStatus.ACTIONED);
 		assertThat(response.useful()).isTrue();
+		assertThat(response.active()).isFalse();
 		assertThat(response.reviewedAt()).isNotNull();
 	}
 
